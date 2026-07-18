@@ -27,8 +27,12 @@ module.exports = async (req, res) => {
       return;
     }
 
+    // 모델 이름을 환경 변수로 빼둠 — 나중에 Google이 모델을 또 종료시켜도
+    // 코드 수정/재배포 없이 Vercel의 Environment Variables에서 값만 바꾸면 됨.
+    // 환경 변수가 없으면 현재 기본값(gemini-3.1-flash-lite)을 사용.
+    const modelName = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
     const geminiUrl =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=" +
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=` +
       process.env.GEMINI_API_KEY;
 
     const geminiResponse = await fetch(geminiUrl, {
@@ -49,9 +53,10 @@ module.exports = async (req, res) => {
     const rawBody = await geminiResponse.text();
 
     if (!geminiResponse.ok) {
-      console.error("Gemini API 오류:", geminiResponse.status, rawBody);
+      console.error("Gemini API 오류:", modelName, geminiResponse.status, rawBody);
       res.status(502).json({
         error: "Gemini API 호출 실패",
+        model: modelName,
         status: geminiResponse.status,
         detail: rawBody
       });
